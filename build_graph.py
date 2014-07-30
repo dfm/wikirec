@@ -15,16 +15,16 @@ args = parser.parse_args()
 with pymysql.connect(user=args.user, passwd=args.password, db="wiki") as c:
     c.execute("drop table if exists `graph`")
     c.execute("""create table `graph` (
-        `g_id1` int(8) unsigned NOT NULL,
-        `g_id2` int(8) unsigned NOT NULL,
+        `g_from` int(8) unsigned NOT NULL,
+        `g_to` int(8) unsigned NOT NULL,
         `g_distance` int(8) unsigned NOT NULL,
         `g_count` int(8) unsigned NOT NULL DEFAULT 0,
-        PRIMARY KEY (`g_id1`, `g_id2`, `g_distance`)
+        PRIMARY KEY (`g_from`, `g_to`, `g_distance`)
     )""")
 
     print("Finding direct links")
     c.execute("""insert into graph
-        (g_id1, g_id2, g_distance, g_count)
+        (g_from, g_to, g_distance, g_count)
     select m1.m_id, m2.m_id, 0, count(m2.m_id)
         from movies as m1
         join pagelinks on pl_from=m1.m_id
@@ -35,7 +35,7 @@ with pymysql.connect(user=args.user, passwd=args.password, db="wiki") as c:
 
     print("Finding indirect links")
     c.execute("""insert into graph
-        (g_id1, g_id2, g_distance, g_count)
+        (g_from, g_to, g_distance, g_count)
     select m1.m_id, m2.m_id, 1, count(m2.m_id)
         from movies as m1
 
