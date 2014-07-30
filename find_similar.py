@@ -21,17 +21,17 @@ with pymysql.connect(user=args.user, passwd=args.password, db="wiki",
     q = """select m_id, m_title, match(m_title) against (%s) as score
            from movies
            where match(m_title) against (%s)
-           order by m_title like %s DESC, score DESC
-           limit 1"""
-    c.execute(q, (title_query, title_query, title_query))
-    result = c.fetchone()
+           limit 10"""
+    c.execute(q, (title_query, title_query))
+    results = c.fetchall()
 
     # Were any results found?
-    if result is None:
+    if results is None:
         print("Couldn't find any movies matching title '{0}'"
               .format(title_query))
         sys.exit(1)
-    m_id, m_title, score = result
+    results = list(results)
+    m_id, m_title, score = results[0]
     print("Interpreting query as: '{0}'".format(m_title.encode("utf-8")))
 
     # Find the related movies.
