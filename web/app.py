@@ -26,6 +26,7 @@ class Application(tornado.web.Application):
         handlers = [
             (r"/", IndexHandler),
             (r"/complete", CompleteHandler),
+            (r"/suggest", SuggestHandler),
         ]
         settings = dict(
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
@@ -56,7 +57,26 @@ class IndexHandler(BaseHandler):
         self.render("index.html")
 
 
-class CompleteHandler(BaseHandler):
+class APIHandler(BaseHandler):
+
+    def get_movies(self, q, N):
+        with self.db as c:
+            c.execute("""
+                select ms_id, ms_title, match(ms_title) against (%s) as score
+                from moviesearch
+                where
+                match(ms_title) against (%s in boolean mode)
+                or
+                ms_title like %s
+                order by ms_title like %s DESC, score DESC, ms_len DESC
+                limit {0}
+            """.format(N), (q+"*", "+"+q.replace(" ", " +")+"*",
+                            "%"+q+"%", q+"%"))
+            titles = c.fetchall()
+        return titles
+
+
+class CompleteHandler(APIHandler):
 
     def get(self):
         # The output of this function will always be JSON.
@@ -70,21 +90,41 @@ class CompleteHandler(BaseHandler):
             return
 
         # Run the database query.
-        with self.db as c:
-            c.execute("""
-                select ms_id, ms_title, match(ms_title) against (%s) as score
-                from moviesearch
-                where
-                match(ms_title) against (%s in boolean mode)
-                or
-                ms_title like %s
-                order by score DESC, ms_len DESC
-                limit 5
-            """, (q+"*", "+"+q.replace(" ", " +")+"*", "%"+q+"%"))
-            titles = c.fetchall()
+        titles = self.get_movies(q, 5)
 
         # Write the output.
         results = [{"i": _[0], "t": _[1]} for _ in titles]
+        self.write(json_encode(results))
+
+
+class SuggestHandler(APIHandler):
+
+    def get(self):
+        # Build the database query from the request parameter.
+        q = self.get_argument("q", None)
+        if q is None:
+            self.set_status(400)
+            self.write(json_encode([]))
+            return
+
+        # Run the database query.
+        movie = self.get_movies(q, 1)
+        self.write(json_encode(movie))
+        return
+
+        # Run the database query.
+        with self.db as c:
+            c.execute("""
+            select page_title, count(page_id) as c from movielinks
+                join moviebacklinks on mbl_from=ml_to
+                join movies on mbl_to=page_id
+                where ml_from=%s and mbl_to!=%s
+                group by page_id
+                order by c desc
+                limit 10
+            """, (page_id, page_id))
+            results = c.fetchall()
+
         self.write(json_encode(results))
 
 

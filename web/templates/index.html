@@ -10,7 +10,10 @@
 <body>
 
 <div>
-    <input class="typeahead" type="text" placeholder="Type the title of a movie that you like">
+    <form action="/suggest" method="GET">
+        <input name="q" class="typeahead" type="text" placeholder="Type the title of a movie that you like">
+        <input type="submit" value="Submit" style="visibility: hidden">
+    </form>
 </div>
 
 <script src="{{ static_url('js/jquery-1.11.1.min.js') }}"></script>
