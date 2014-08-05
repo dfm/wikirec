@@ -16,3 +16,8 @@ Then, to find the movies, run:
 
   scripts/find_movies.py -u USERNAME -p PASSWORD
   
+And the links:
+
+.. code-block:: bash
+
+  scripts/find_movielinks.py -u USERNAME -p PASSWORD
