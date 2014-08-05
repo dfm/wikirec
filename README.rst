@@ -9,3 +9,10 @@ save them in ``data``. Run:
   zcat preimport.sql.gz enwiki-latest-redirect.sql.gz postimport.sql.gz | mysql -u USERNAME -p wiki
 
 This will take a *long* time. Like days.
+
+Then, to find the movies, run:
+
+.. code-block:: bash
+
+  scripts/find_movies.py -u USERNAME -p PASSWORD
+  
