@@ -21,3 +21,7 @@ And the links:
 .. code-block:: bash
 
   scripts/find_movielinks.py -u USERNAME -p PASSWORD
+
+.. code-block:: bash
+
+  scripts/build_index.py -u USERNAME -p PASSWORD
