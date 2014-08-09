@@ -1,0 +1,28 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<title>Movie Recommendations</title>
+
+<link rel="stylesheet" href="{{ static_url('css/normalize.css') }}" type="text/css" />
+
+</head>
+<body>
+
+{% if movie %}
+<h1>{{ movie['title'] }}</h1>
+{% if len(movies) %}
+<ul>
+    {% for m in movies %}
+    <li><a href="?q={{ format_title(m['title']) }}">{{ format_title(m['title']) }}</a> ({{ m['score'] }})</li>
+    {% end %}
+</ul>
+{% else %}
+No suggestions.
+{% end %}
+{% else %}
+{{ message }}
+{% end %}
+
+</body>
+</html>

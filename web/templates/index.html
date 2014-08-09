@@ -28,7 +28,7 @@ var completer = new Bloodhound({
 
 completer.initialize();
 
-$('.typeahead').typeahead({highlight: true, minLength: 3}, {
+$('.typeahead').typeahead({highlight: true, minLength: 2}, {
     name: 'q',
     displayKey: 't',
     source: completer.ttAdapter()

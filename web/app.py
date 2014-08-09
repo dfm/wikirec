@@ -11,6 +11,8 @@ import tornado.httpserver
 from tornado.escape import json_encode
 from tornado.options import define, options, parse_command_line
 
+import ui_methods
+
 define("port", default=8888, help="run on the given port", type=int)
 define("debug", default=False, help="run in debug mode")
 define("xheaders", default=False, help="use X-headers")
@@ -36,7 +38,8 @@ class Application(tornado.web.Application):
             cookie_secret="Zuper",
             debug=options.debug,
         )
-        super(Application, self).__init__(handlers, **settings)
+        super(Application, self).__init__(handlers, ui_methods=ui_methods,
+                                          **settings)
 
         self.db = pymysql.connect(user=options.mysql_user,
                                   passwd=options.mysql_pass,
@@ -103,16 +106,17 @@ class SuggestHandler(APIHandler):
         # Build the database query from the request parameter.
         q = self.get_argument("q", None)
         if q is None:
-            self.set_status(400)
-            self.write(json_encode([]))
+            self.redirect("/")
             return
 
-        # Run the database query.
+        # Find the requested movie.
         movie = self.get_movies(q, 1)
-        self.write(json_encode(movie))
-        return
+        if not len(movie):
+            self.render("list.html", movie=None, message="No matches.")
+        movie = movie[0]
+        movie = dict(id=movie[0], title=movie[1])
 
-        # Run the database query.
+        # Find related movies.
         with self.db as c:
             c.execute("""
             select page_title, count(page_id) as c from movielinks
@@ -122,17 +126,25 @@ class SuggestHandler(APIHandler):
                 group by page_id
                 order by c desc
                 limit 10
-            """, (page_id, page_id))
-            results = c.fetchall()
+            """, (movie["id"], movie["id"]))
+            movies = c.fetchall()
 
-        self.write(json_encode(results))
+        # Fail if nothing was found.
+        if not len(movies):
+            self.render("list.html", movie=movie, movies=[])
+
+        # Format the list correctly.
+        keys = ["title", "score"]
+        movies = [dict(zip(keys, m)) for m in movies]
+
+        self.render("list.html", movie=movie, movies=movies)
 
 
 def main():
     parse_command_line()
 
     http_server = tornado.httpserver.HTTPServer(Application())
-    http_server.listen(options.port)
+    http_server.listen(options.port, address="127.0.0.1")
     tornado.ioloop.IOLoop.instance().start()
 
 if __name__ == "__main__":
