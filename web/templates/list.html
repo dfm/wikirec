@@ -1,20 +1,17 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-<title>Movie Recommendations</title>
+{% extends "base.html" %}
 
-<link rel="stylesheet" href="{{ static_url('css/normalize.css') }}" type="text/css" />
+{% block current_title %}{% if movie %}{{ format_title(movie) }}{% end %}{% end %}
 
-</head>
-<body>
+{% block content %}
 
 {% if movie %}
-<h1>{{ movie['title'] }}</h1>
+<p><a href="{{ amazon_url(format_title(movie)) }}" target="_blank">Watch it on Amazon</a></p>
+
+<p>Related movies:</p>
 {% if len(movies) %}
 <ul>
     {% for m in movies %}
-    <li><a href="?q={{ format_title(m['title']) }}">{{ format_title(m['title']) }}</a> ({{ m['score'] }})</li>
+    <li><a href="/movie/{{ m['id'] }}">{{ format_title(m['title']) }}</a></li>
     {% end %}
 </ul>
 {% else %}
@@ -24,5 +21,4 @@ No suggestions.
 {{ message }}
 {% end %}
 
-</body>
-</html>
+{% end %}

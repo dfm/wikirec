@@ -1,0 +1,58 @@
+@import url(https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700);
+
+html, body {
+    height: 100%;
+    font-family: "Source Sans Pro", "Lucida Grande","Lucida Sans Unicode","Lucida Sans",Geneva,Verdana,sans-serif;
+    font-weight: normal;
+    -webkit-font-smoothing: antialiased;
+    font-size: 19px;
+    line-height: 1.6;
+    color: rgba(0, 0, 0, 0.8);
+}
+
+a {
+    color: inherit;
+}
+
+.container {
+    width: 600px;
+    margin: 0 auto;
+}
+
+.topbar {
+    text-align: center;
+}
+
+.topbar .typeahead {
+    width: 580px;
+    border: none;
+    outline: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.8);
+    padding: 10px 10px 7px;
+    margin: 45px 0 0;
+}
+
+.tt-dropdown-menu {
+    width: 600px;
+    text-align: left;
+    margin: 0;
+    padding: 0;
+}
+
+.tt-suggestions {
+    border: 1px solid rgba(0, 0, 0, 0.8);
+    border-top: none;
+}
+
+.tt-suggestion {
+    cursor: pointer;
+    background-color: #fff;
+    line-height: 0px;
+
+    display: block;
+    padding: 1px 10px;
+}
+
+.tt-cursor {
+    background-color: #eee;
+}

@@ -13,9 +13,9 @@ from tornado.options import define, options, parse_command_line
 
 import ui_methods
 
-define("port", default=8888, help="run on the given port", type=int)
+define("port", default=3047, help="run on the given port", type=int)
 define("debug", default=False, help="run in debug mode")
-define("xheaders", default=False, help="use X-headers")
+define("xheaders", default=True, help="use X-headers")
 
 define("mysql_user", default=None, help="MySQL username")
 define("mysql_pass", default=None, help="MySQL password")
@@ -28,7 +28,8 @@ class Application(tornado.web.Application):
         handlers = [
             (r"/", IndexHandler),
             (r"/complete", CompleteHandler),
-            (r"/suggest", SuggestHandler),
+            (r"/search", SearchHandler),
+            (r"/movie/([0-9]+)", RelatedHandler),
         ]
         settings = dict(
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
@@ -41,10 +42,16 @@ class Application(tornado.web.Application):
         super(Application, self).__init__(handlers, ui_methods=ui_methods,
                                           **settings)
 
-        self.db = pymysql.connect(user=options.mysql_user,
-                                  passwd=options.mysql_pass,
-                                  db=options.mysql_db,
-                                  charset="utf8")
+        self._db = pymysql.connect(user=options.mysql_user,
+                                   passwd=options.mysql_pass,
+                                   db=options.mysql_db,
+                                   charset="utf8")
+
+    @property
+    def db(self):
+        # Make sure that the connection is still alive.
+        self._db.ping(reconnect=True)
+        return self._db
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -100,7 +107,7 @@ class CompleteHandler(APIHandler):
         self.write(json_encode(results))
 
 
-class SuggestHandler(APIHandler):
+class SearchHandler(APIHandler):
 
     def get(self):
         # Build the database query from the request parameter.
@@ -109,24 +116,45 @@ class SuggestHandler(APIHandler):
             self.redirect("/")
             return
 
-        # Find the requested movie.
-        movie = self.get_movies(q, 1)
-        if not len(movie):
-            self.render("list.html", movie=None, message="No matches.")
-        movie = movie[0]
-        movie = dict(id=movie[0], title=movie[1])
+        # First search for exact matches.
+        with self.db as c:
+            c.execute("""select ms_id from moviesearch where ms_title like %s
+                         limit 1""",
+                      (q, ))
+            movie = c.fetchone()
 
+        # Search for matches.
+        if movie is None:
+            movie = self.get_movies(q, 1)
+            if not len(movie):
+                self.render("list.html", movie=None, message="No matches.")
+            movie = movie[0]
+
+        self.redirect("/movie/{0}".format(movie[0]))
+
+
+class RelatedHandler(BaseHandler):
+
+    def get(self, movie_id):
         # Find related movies.
         with self.db as c:
+            c.execute("select page_title from movies where page_id=%s",
+                      (movie_id, ))
+            movie = c.fetchone()
+            if movie is None:
+                self.render("list.html", movie=None, message="No matches.")
+                return
+            movie = movie[0]
+
             c.execute("""
-            select page_title, count(page_id) as c from movielinks
+            select page_id, page_title, count(page_id) as c from movielinks
                 join moviebacklinks on mbl_from=ml_to
                 join movies on mbl_to=page_id
                 where ml_from=%s and mbl_to!=%s
                 group by page_id
                 order by c desc
                 limit 10
-            """, (movie["id"], movie["id"]))
+            """, (movie_id, movie_id))
             movies = c.fetchall()
 
         # Fail if nothing was found.
@@ -134,7 +162,7 @@ class SuggestHandler(APIHandler):
             self.render("list.html", movie=movie, movies=[])
 
         # Format the list correctly.
-        keys = ["title", "score"]
+        keys = ["id", "title", "score"]
         movies = [dict(zip(keys, m)) for m in movies]
 
         self.render("list.html", movie=movie, movies=movies)

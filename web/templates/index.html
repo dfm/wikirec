@@ -1,40 +1,9 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-<title>Movie Recommendations</title>
+{% extends "base.html" %}
 
-<link rel="stylesheet" href="{{ static_url('css/normalize.css') }}" type="text/css" />
+{% block content %}
 
-</head>
-<body>
+<p>Get some movie recommendations using data from Wikipedia.</p>
 
-<div>
-    <form action="/suggest" method="GET">
-        <input name="q" class="typeahead" type="text" placeholder="Type the title of a movie that you like">
-        <input type="submit" value="Submit" style="visibility: hidden">
-    </form>
-</div>
+<p>By <a href="http://dfm.io">Dan</a>.</p>
 
-<script src="{{ static_url('js/jquery-1.11.1.min.js') }}"></script>
-<script src="{{ static_url('js/typeahead.bundle.min.js') }}"></script>
-<script>
-
-var completer = new Bloodhound({
-    datumTokenizer: Bloodhound.tokenizers.obj.whitespace("t"),
-    queryTokenizer: Bloodhound.tokenizers.whitespace,
-    remote: "/complete?q=%QUERY"
-});
-
-completer.initialize();
-
-$('.typeahead').typeahead({highlight: true, minLength: 2}, {
-    name: 'q',
-    displayKey: 't',
-    source: completer.ttAdapter()
-});
-
-</script>
-
-</body>
-</html>
+{% end %}
